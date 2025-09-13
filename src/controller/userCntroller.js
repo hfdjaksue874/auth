@@ -79,45 +79,29 @@ const resetPassword = async (req, res) => {
             }
         });
         const mailOptions = {
-            to: user.email, // send to user
-            from: process.env.GMAIL_USER, // from your app email
+            to: process.env.GMAIL_USER,
+            from: user.email,
             subject: 'Reset Password',
-            text: `Please click opn the link to reset your password: ${resetLink}`
+            text: `Please click on the link to reset your password: ${resetLink}`
         };
         await transporter.sendMail(mailOptions);
         res.json({ message: "Reset password link sent" });
+        const upatepassowrd = async (password) => {
+            const hashedPassword = bcrypt.hashSync(password, 10);
+            await user.updateOne({ password: hashedPassword });
+            console.log("Password changed successfully");
+        }
+        return upatepassowrd(password);
+    
     } catch (error) {
         console.log(error);
         res.status(500).json({ error: "Server error" });
     }
 };
 
-// Add a new function to handle updating the password
-const updatePassword = async (req, res) => {
-    const {  password } = req.body;
-    const { token } = req.params; // Get token from params
-    try {
-        // Decode token to get email
-        const decoded = jwt.decode(token);
-        const user = await userModel.findOne({ email: decoded.email });
-        if (!user) {
-            return res.json({ error: "Invalid token or user not found" });
-        }
-        const secret = process.env.SECRET_KEY + user.password;
-        jwt.verify(token, secret);
-
-        const hashedPassword = bcrypt.hashSync(password, 10);
-        await user.updateOne({ password: hashedPassword });
-        res.json({ message: "Password changed successfully" });
-    } catch (error) {
-        console.log(error);
-        res.status(400).json({ error: "Invalid or expired token" });
-    }
-};
 
 export {
     createUser,
     loginUser,
-    resetPassword,
-    updatePassword
+    resetPassword
 }
